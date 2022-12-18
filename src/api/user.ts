@@ -42,7 +42,7 @@ userRouter.post('/',
 				token: createAccessToken(user.name, '30min'),
 				refreshToken: createRefreshToken(user.name),
 			})
-		} catch(e) {
+		} catch (e) {
 			if (e instanceof Prisma.PrismaClientKnownRequestError) {
 				if (e.code === 'P2002') {
 					return res.status(400).json({
@@ -60,9 +60,20 @@ userRouter.delete('/',
 	requireValidation,
 	async (req, res) => {
 		if (await verifyPassword({ name: req.body.username }, req.body.password)) {
-			return res.status(200).json({
-				message: 'User deleted successfully',
-			})
+			try {
+				await prisma.user.delete({
+					where: {
+						name: req.body.username,
+					}
+				})
+				return res.status(200).json({
+					message: 'User deleted successfully',
+				})
+			} catch (e) {
+				return res.status(500).json({
+					message: 'Cannot delete user',
+				})
+			}
 		}
 		return res.status(401).json({
 			message: 'Invalid password and/or username',
@@ -101,7 +112,7 @@ userRouter.post('/refresh',
 		   res.status(200).json({
 			   token: refreshedAccessToken,
 		   })
-		} catch(e) {
+		} catch (e) {
 		   res.status(401).json({
 			   message: 'Invalid or expired refresh token',
 		   })
